@@ -5,12 +5,13 @@ from xml.etree import ElementTree as ET
 from string import rjust, ljust, join
 from blessings import Terminal
 
-INDENT = " "*2
+INDENT = " " * 2
 DIRECTION = {'s': 'south', 'n': 'north'}
 WALKING = 3
 WARNING = 10
 BASE_URL = "http://api.bart.gov/api/etd.aspx?cmd=etd&key=MW9S-E7SL-26DU-VV8V"
 term = Terminal('xterm-256color')
+
 
 def get_time(orig, dir):
   powl_url = "%s&ORIG=%s&dir=%s" % (BASE_URL, orig, dir)
@@ -19,10 +20,9 @@ def get_time(orig, dir):
 
   output = "\n"
   output += INDENT
-  output += term.bright_green_underline("Heading %s from %s" % (DIRECTION[dir], root.find('.//name').text))#.underline.light_green
-
+  output += term.bright_green_underline("Heading %s from %s"
+                % (DIRECTION[dir], root.find('.//name').text))
   output += "\n"
-
 
   for etd in root.iter('etd'):
     estimates = [est.find("minutes").text for est in etd.iter("estimate")]
@@ -33,11 +33,11 @@ def get_time(orig, dir):
       if not next_train and est.strip().isdigit() and int(est) > WALKING:
         next_train = int(est)
         estimates[idx] = term.bold_yellow(est)
-        break;
+        break
 
     output += INDENT
     output += ("[%s]" % etd.find('abbreviation').text) + "  "
-    output += ljust(term.bright_white (etd.find('destination').text), 32)
+    output += ljust(term.bright_white(etd.find('destination').text), 32)
     output += join(estimates, " <- ") + " minutes"
 
     if next_train < WARNING:
@@ -48,9 +48,10 @@ def get_time(orig, dir):
   output += "\n"
   output += INDENT
   output += "Page time: %s" % root.find('.//time').text
-  output += "   Last fetch: %s" % time.strftime("%I:%M:%S%P",time.localtime())
+  output += "   Last fetch: %s" % time.strftime("%I:%M:%S%P", time.localtime())
   output += "\n"
   return output
+
 
 def getch():
   import sys, tty, termios
@@ -64,16 +65,17 @@ def getch():
   return ch
 
 
-def magic_lines(s,width=term.width):
+def magic_lines(s, width=term.width):
   for line in s.split("\n"):
-    print term.on_bright_black_underline(" "*width)
+    print term.on_bright_black_underline(" " * width)
     time.sleep(0.05)
 
     # print term.move_up + term.on_bright_black_underline(line)
     # time.sleep(0.2)
-    print term.move_up + term.on_black(" "*width)
+    print term.move_up + term.on_black(" " * width)
     print term.move_up + line
     time.sleep(0.05)
+
 
 def draw(station, north=False, south=True):
   with term.location(y=0):
@@ -83,12 +85,13 @@ def draw(station, north=False, south=True):
     if south:
       magic_lines(get_time(station, 's'), term.width)
 
-    print '-'*term.width
+    print '-' * term.width
     print "Press 'r' to refresh, any other key to quit"
   command = getch()
   if command != 'r':
     return
   draw(station, north, south)
+
 
 def main():
   p = argparse.ArgumentParser()
