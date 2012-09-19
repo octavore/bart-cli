@@ -9,12 +9,26 @@ INDENT = " " * 2
 DIRECTION = {'s': 'south', 'n': 'north'}
 WALKING = 3
 WARNING = 10
-BASE_URL = "http://api.bart.gov/api/etd.aspx?cmd=etd&key=MW9S-E7SL-26DU-VV8V"
+BASE_URL = "http://api.bart.gov/api/"
 term = Terminal('xterm-256color')
 
+def api_url(endpoint, cmd, params={}):
+  tail = join(["%s=%s" % (k,params[k]) for k in params], '&')
+  tail += "&key=MW9S-E7SL-26DU-VV8V"
+  return "%s%s.aspx?cmd=%s&%s" % (BASE_URL, endpoint, cmd, tail)
+
+def get_stations():
+  stns_url = api_url('stn', 'stns')
+  xml_doc = ET.parse(urlopen(stns_url))
+  root = xml_doc.getroot()
+  for station in root.iter('station'):
+    abbr = term.bright_green(station.find('abbr').text)
+    name = station.find('name').text
+    print '%s %s' % (abbr, name)
 
 def get_time(orig, dir):
-  powl_url = "%s&ORIG=%s&dir=%s" % (BASE_URL, orig, dir)
+  powl_url = api_url('etd', 'etd', { 'ORIG': orig, 'dir': dir})
+
   xml_doc = ET.parse(urlopen(powl_url))
   root = xml_doc.getroot()
 
@@ -103,13 +117,17 @@ def main():
                   default='POWL')
   p.add_argument('-n', action='store_true', help='Show northbound', default=False)
   p.add_argument('-s', action='store_true', help='Show southbound', default=False)
+  p.add_argument('-p', action='store_true', help='Print station list', default=False)
 
   args = p.parse_args()
 
-  with term.fullscreen():
-    with term.hidden_cursor():
-      # TODO: catch invalid station
-      draw(args.station, args.n, args.s or not args.n)
+  if args.p:
+    get_stations()
+  else:
+    with term.fullscreen():
+      with term.hidden_cursor():
+        # TODO: catch invalid station
+        draw(args.station, args.n, args.s or not args.n)
 
 
 if __name__ == '__main__':
